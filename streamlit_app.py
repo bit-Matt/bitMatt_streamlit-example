@@ -1,38 +1,103 @@
-from collections import namedtuple
-import altair as alt
-import math
-import pandas as pd
+# Data Source: https://public.tableau.com/app/profile/federal.trade.commission/viz/FraudandIDTheftMaps/AllReportsbyState
+# US State Boundaries: https://public.opendatasoft.com/explore/dataset/us-state-boundaries/export/
+
 import streamlit as st
+import pandas as pd
+import folium
+from streamlit_folium import st_folium
 
-"""
-# Welcome to Streamlit!
+APP_TITLE = 'Fraud and Identity Theft Report'
+APP_SUB_TITLE = 'Source: Federal Trade Commission'
 
-Edit `/streamlit_app.py` to customize this app to your heart's desire :heart:
+def display_time_filters(df):
+    year_list = list(df['Year'].unique())
+    year_list.sort()
+    year = st.sidebar.selectbox('Year', year_list, len(year_list)-1)
+    quarter = st.sidebar.radio('Quarter', [1, 2, 3, 4])
+    st.header(f'{year} Q{quarter}')
+    return year, quarter
 
-If you have any questions, checkout our [documentation](https://docs.streamlit.io) and [community
-forums](https://discuss.streamlit.io).
+def display_state_filter(df, state_name):
+    state_list = [''] + list(df['State Name'].unique())
+    state_list.sort()
+    state_index = state_list.index(state_name) if state_name and state_name in state_list else 0
+    return st.sidebar.selectbox('State', state_list, state_index)
 
-In the meantime, below is an example of what you can do with just a few lines of code:
-"""
+def display_report_type_filter():
+    return st.sidebar.radio('Report Type', ['Fraud', 'Other'])
+
+def display_map(df, year, quarter):
+    df = df[(df['Year'] == year) & (df['Quarter'] == quarter)]
+
+    map = folium.Map(location=[38, -96.5], zoom_start=4, scrollWheelZoom=False, tiles='CartoDB positron')
+    
+    choropleth = folium.Choropleth(
+        geo_data='data/us-state-boundaries.geojson',
+        data=df,
+        columns=('State Name', 'State Total Reports Quarter'),
+        key_on='feature.properties.name',
+        line_opacity=0.8,
+        highlight=True
+    )
+    choropleth.geojson.add_to(map)
+
+    df_indexed = df.set_index('State Name')
+    for feature in choropleth.geojson.data['features']:
+        state_name = feature['properties']['name']
+        feature['properties']['population'] = 'Population: ' + '{:,}'.format(df_indexed.loc[state_name, 'State Pop'][0]) if state_name in list(df_indexed.index) else ''
+        feature['properties']['per_100k'] = 'Reports/100K Population: ' + str(round(df_indexed.loc[state_name, 'Reports per 100K-F&O together'][0])) if state_name in list(df_indexed.index) else ''
+
+    choropleth.geojson.add_child(
+        folium.features.GeoJsonTooltip(['name', 'population', 'per_100k'], labels=False)
+    )
+    
+    st_map = st_folium(map, width=700, height=450)
+
+    state_name = ''
+    if st_map['last_active_drawing']:
+        state_name = st_map['last_active_drawing']['properties']['name']
+    return state_name
+
+def display_fraud_facts(df, year, quarter, report_type, state_name, field, title, string_format='${:,}', is_median=False):
+    df = df[(df['Year'] == year) & (df['Quarter'] == quarter)]
+    df = df[df['Report Type'] == report_type]
+    if state_name:
+        df = df[df['State Name'] == state_name]
+    df.drop_duplicates(inplace=True)
+    if is_median:
+        total = df[field].sum() / len(df[field]) if len(df) else 0
+    else:
+        total = df[field].sum()
+    st.metric(title, string_format.format(round(total)))
+
+def main():
+    st.set_page_config(APP_TITLE)
+    st.title(APP_TITLE)
+    st.caption(APP_SUB_TITLE)
+
+    #Load Data
+    df_continental = pd.read_csv('data/AxS-Continental_Full Data_data.csv')
+    df_fraud = pd.read_csv('data/AxS-Fraud Box_Full Data_data.csv')
+    df_median = pd.read_csv('data/AxS-Median Box_Full Data_data.csv')
+    df_loss = pd.read_csv('data/AxS-Losses Box_Full Data_data.csv')
+
+    #Display Filters and Map
+    year, quarter = display_time_filters(df_continental)
+    state_name = display_map(df_continental, year, quarter)
+    state_name = display_state_filter(df_continental, state_name)
+    report_type = display_report_type_filter()
+
+    #Display Metrics
+    st.subheader(f'{state_name} {report_type} Facts')
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        display_fraud_facts(df_fraud, year, quarter, report_type, state_name, 'State Fraud/Other Count', f'# of {report_type} Reports', string_format='{:,}')
+    with col2:
+        display_fraud_facts(df_median, year, quarter, report_type, state_name, 'Overall Median Losses Qtr', 'Median $ Loss', is_median=True)
+    with col3:
+        display_fraud_facts(df_loss, year, quarter, report_type, state_name, 'Total Losses', 'Total $ Loss')        
 
 
-with st.echo(code_location='below'):
-    total_points = st.slider("Number of points in spiral", 1, 5000, 2000)
-    num_turns = st.slider("Number of turns in spiral", 1, 100, 9)
-
-    Point = namedtuple('Point', 'x y')
-    data = []
-
-    points_per_turn = total_points / num_turns
-
-    for curr_point_num in range(total_points):
-        curr_turn, i = divmod(curr_point_num, points_per_turn)
-        angle = (curr_turn + 1) * 2 * math.pi * i / points_per_turn
-        radius = curr_point_num / total_points
-        x = radius * math.cos(angle)
-        y = radius * math.sin(angle)
-        data.append(Point(x, y))
-
-    st.altair_chart(alt.Chart(pd.DataFrame(data), height=500, width=500)
-        .mark_circle(color='#0068c9', opacity=0.5)
-        .encode(x='x:Q', y='y:Q'))
+if __name__ == "__main__":
+    main()
