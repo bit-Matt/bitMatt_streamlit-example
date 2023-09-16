@@ -1,53 +1,24 @@
-# from collections import namedtuple
-# import altair as alt
-# import math
-# import pandas as pd
-# import streamlit as st
-
-# """
-# # Welcome to Streamlit!
-
-# Edit `/streamlit_app.py` to customize this app to your heart's desire :heart:
-
-# If you have any questions, checkout our [documentation](https://docs.streamlit.io) and [community
-# forums](https://discuss.streamlit.io).
-
-# In the meantime, below is an example of what you can do with just a few lines of code:
-# """
-
-
-# with st.echo(code_location='below'):
-#     total_points = st.slider("Number of points in spiral", 1, 5000, 2000)
-#     num_turns = st.slider("Number of turns in spiral", 1, 100, 9)
-
-#     Point = namedtuple('Point', 'x y')
-#     data = []
-
-#     points_per_turn = total_points / num_turns
-
-#     for curr_point_num in range(total_points):
-#         curr_turn, i = divmod(curr_point_num, points_per_turn)
-#         angle = (curr_turn + 1) * 2 * math.pi * i / points_per_turn
-#         radius = curr_point_num / total_points
-#         x = radius * math.cos(angle)
-#         y = radius * math.sin(angle)
-#         data.append(Point(x, y))
-
-#     st.altair_chart(alt.Chart(pd.DataFrame(data), height=500, width=500)
-#         .mark_circle(color='#0068c9', opacity=0.5)
-#         .encode(x='x:Q', y='y:Q'))
-
-
-import folium
 import streamlit as st
 
-from streamlit_folium import st_folium
+# Page title and sidebar title
+st.markdown("# Main page 🎈")
+st.sidebar.markdown("# Main page 🎈")
 
-# center on Liberty Bell, add marker
-m = folium.Map(location=[39.949610, -75.150282], zoom_start=16)
-folium.Marker(
-    [39.949610, -75.150282], popup="Liberty Bell", tooltip="Liberty Bell"
-).add_to(m)
+# Challenge section
+st.markdown("## CHALLENGE :trophy:")
+st.write(
+    "1. Segmentation of Core Mass clients from far-flung areas based on client information and behavior from April to June 2023."
+)
+st.write("2. Market and product recommendations, and next best actions per created segment.")
 
-# call to render Folium map in Streamlit
-st_data = st_folium(m, width=725)
+# Introduction section
+st.markdown("## INTRODUCTION :wave:")
+st.write(
+    "Welcome to Challenge 2 of this year’s Philippine Junior Data Science Challenge! This exercise aims to test your general ability to clean and process data, your ability to produce client groups based on given data, as well as your ability to present your results. In particular, you will be working with our Core Mass clients, who make up the bulk of our customer population, thus making them an important part of our business."
+)
+st.write(
+    "For this challenge, you are tasked to create segments for Core Mass clients based in far-flung areas through their demographics and behavior exhibited from April to June 2023. You are also tasked to recommend products and next best actions for each segment you create. How exactly you will perform these tasks is up to you, but do not forget to provide details for each step you take; there is a scoring system to determine who will make it to the next round."
+)
+st.write(
+    "In addition, you will be answering five (5) questions related to our listed goals for this exercise. These questions are provided to guide you in your Challenge 2 journey as you explore the best ways to cater to various Core Mass clients. Nevertheless, your answers to these questions will also be considered in final evaluations, so make sure to provide substantial output here as well."
+)
