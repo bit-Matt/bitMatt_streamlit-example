@@ -4,13 +4,14 @@ import folium
 from streamlit_folium import st_folium
 from constants.regions import regions_dict, regions_list, get_key
 from constants.amounts import amounts_dict, amounts_list
+from constants.provinces import provinces_dict, get_key_province
 import plotly.express as px
 
 APP_TITLE = 'Philippines Map'
 APP_SUB_TITLE = 'Source: Philippines'
 
 @st.cache_data(experimental_allow_widgets=True)
-def display_map(df, region_type):
+def display_map(df_region, df_province, region_type):
 
     map = folium.Map(location=[
         12.8797, 121.7740
@@ -20,16 +21,21 @@ def display_map(df, region_type):
     all_regions = 'data/jsons/regions.geojson'
     geo_data = all_regions if is_all else regions_dict[region_type]['path']
     key_on = 'feature.properties.ADM1_EN' if is_all else 'feature.properties.ADM2_EN'
+    key_column = 'REGION' if is_all else 'PROVINCE'
 
-    mapped_df = df.copy()
-    mapped_df['REGION'] = mapped_df['REGION'].apply(lambda x: get_key(x))
+    if is_all: 
+        mapped_df = df_region.copy()
+        mapped_df['REGION'] = mapped_df['REGION'].apply(lambda x: get_key(x))
+    else:
+        mapped_df = df_province.copy()
+        mapped_df['PROVINCE'] = mapped_df['PROVINCE'].apply(lambda x: provinces_dict[x])
     
  
     choropleth = folium.Choropleth(
         geo_data=geo_data,
         data=mapped_df,
         key_on=key_on,
-        columns=('REGION', 'AVERAGE_AMOUNT_Average'),
+        columns=(key_column, 'AVERAGE_AMOUNT_Average'),
         fill_color='YlOrRd',
         fill_opacity=0.7,
         line_opacity=0.8,
@@ -39,7 +45,7 @@ def display_map(df, region_type):
 
 
     custom_tooltip = """
-    <h4>{region_name}</h4>
+    <h4>{name}</h4>
     <p>Average Credit Amount: {average_credit_amount}</p>
     <p>Average Debit Amount: {average_debit_amount}</p>
     <p>Average Financial Amount: {average_financial_amount}</p>
@@ -50,7 +56,7 @@ def display_map(df, region_type):
     """
 
     if is_all:
-        df_indexed = df.set_index('REGION')
+        df_indexed = df_region.set_index('REGION')
         for feature in choropleth.geojson.data['features']:
             region_name = feature['properties']['ADM1_EN']
             mapped_region_name = regions_dict[region_name]['value'] if region_name in regions_dict else ''
@@ -70,7 +76,43 @@ def display_map(df, region_type):
             average_total_amount = "No data" if average_total_amount == 0 else f'₱{average_total_amount:,.2f}'
 
             tooltip_content = custom_tooltip.format(
-                region_name=region_name,
+                name=region_name,
+                average_credit_amount=average_credit_amount,
+                average_debit_amount=average_debit_amount,
+                average_financial_amount=average_financial_amount,
+                average_incoming_amount=average_incoming_amount,
+                average_outgoing_amount=average_outgoing_amount,
+                average_total_amount=average_total_amount,
+            )
+            feature['properties']['tooltip_content'] = tooltip_content
+
+        choropleth.geojson.add_child(
+            folium.features.GeoJsonTooltip(['ADM1_EN', 'tooltip_content'], labels=False)
+        )
+    else: 
+        df_indexed = df_province.set_index('PROVINCE')
+        for feature in choropleth.geojson.data['features']:
+            province_name = feature['properties']['ADM2_EN']
+            mapped_province_name = get_key_province(province_name)
+            print(province_name, mapped_province_name)
+            average_credit_amount = df_indexed.loc[mapped_province_name, 'AVERAGE_AMOUNT_Credit'] if mapped_province_name in list(df_indexed.index) else 0
+            average_debit_amount = df_indexed.loc[mapped_province_name, 'AVERAGE_AMOUNT_Debit'] if mapped_province_name in list(df_indexed.index) else 0
+            average_financial_amount = df_indexed.loc[mapped_province_name, 'AVERAGE_AMOUNT_Financial'] if mapped_province_name in list(df_indexed.index) else 0
+            average_incoming_amount = df_indexed.loc[mapped_province_name, 'AVERAGE_AMOUNT_Incoming'] if mapped_province_name in list(df_indexed.index) else 0
+            average_outgoing_amount = df_indexed.loc[mapped_province_name, 'AVERAGE_AMOUNT_Outgoing'] if mapped_province_name in list(df_indexed.index) else 0
+            average_total_amount = df_indexed.loc[mapped_province_name, 'AVERAGE_AMOUNT_Average'] if mapped_province_name in list(df_indexed.index) else 0
+
+            # Check if the value is zero and replace with "No data"
+            average_credit_amount = "No data" if average_credit_amount == 0 else f'₱{average_credit_amount:,.2f}' 
+            average_debit_amount = "No data" if average_debit_amount == 0 else f'₱{average_debit_amount:,.2f}'
+            average_financial_amount = "No data" if average_financial_amount == 0 else f'₱{average_financial_amount:,.2f}'
+            average_incoming_amount = "No data" if average_incoming_amount == 0 else f'₱{average_incoming_amount:,.2f}'
+            average_outgoing_amount = "No data" if average_outgoing_amount == 0 else f'₱{average_outgoing_amount:,.2f}'
+            average_total_amount = "No data" if average_total_amount == 0 else f'₱{average_total_amount:,.2f}'
+
+            
+            tooltip_content = custom_tooltip.format(
+                name=province_name,
                 average_credit_amount=average_credit_amount,
                 average_debit_amount=average_debit_amount,
                 average_financial_amount=average_financial_amount,
@@ -93,6 +135,7 @@ def main():
 
     # Load Data
     df_regions_data = pd.read_excel('data/spreadsheets/merged_data.xlsx')
+    df_provinces_data = pd.read_excel('data/spreadsheets/merged_provinces.xlsx')
 
     st.markdown("# Map page 🗺️")
     st.sidebar.markdown("# Map page 🗺️")
@@ -100,7 +143,7 @@ def main():
     region_type = st.sidebar.selectbox("Select Location Type", regions_list)
     amount_type = st.sidebar.selectbox("Select Amount Type", amounts_list)
 
-    display_map(df_regions_data, region_type)
+    display_map(df_regions_data, df_provinces_data, region_type)
 
 
     if region_type != 'All Regions':
