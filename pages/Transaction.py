@@ -13,6 +13,14 @@ APP_SUB_TITLE = 'Source: https://github.com/faeldon/philippines-json-maps'
 @st.cache_data(experimental_allow_widgets=True)
 def display_map(df_region, df_province, region_type):
 
+    st.markdown("### Choropleth Map")
+    st.write("This map displays the average transaction amount per customer for different regions or provinces in the Philippines.")
+    st.write("Each polygon represents a region or province, and the color intensity reflects the average transaction amount.")
+    st.write("Hover over a polygon to see detailed information about the region or province, including average credit, debit, financial, incoming, and outgoing amounts, as well as the average total amount per customer.")
+    st.write("You can select a specific region or province using the dropdown menu on the left.")
+    st.write("The color scale indicates higher transaction amounts with darker colors.")
+
+
     map = folium.Map(location=[
         12.8797, 121.7740
     ], zoom_start=5, scrollWheelZoom=True, tiles='CartoDB positron')
@@ -145,8 +153,8 @@ def main():
 
 
     if region_type != 'All Regions':
-
-        st.subheader(f'Region: {region_type}')
+        st.markdown("### Selected Region/Province")
+        st.write(f"You have selected {region_type}. Here are the average transaction amounts for this {region_type}:")
 
         selected_region = df_regions_data[df_regions_data['REGION'] == regions_dict[region_type]['value']]
 
@@ -178,7 +186,10 @@ def main():
             st.metric('Average Total Amount', f'₱{average_total_amount:,.2f}')
         
 
-    st.subheader(f'Barchart of {amount_type} Amounts by Region')
+    st.markdown("### Bar Chart")
+    st.write("This bar chart displays the average transaction amounts by region.")
+    st.write("You can choose to sort the regions by value in ascending or descending order using the radio buttons.")
+    st.write("Click on a region's bar to view more details.")
 
     amount_value = amounts_dict[amount_type]['value']
     df_region = df_regions_data[['REGION', amount_value]]
