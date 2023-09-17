@@ -30,14 +30,12 @@ def display_map(region_type: str):
 
     st_folium(map, width=800, height=500)
 
-
-
 def main():
     st.set_page_config(APP_TITLE)
     st.title(APP_TITLE)
     st.caption(APP_SUB_TITLE)
 
-    #Load Data
+    # Load Data
     df_merged_data = pd.read_excel('data/spreadsheets/merged_data.xlsx')
 
     st.markdown("# Map page 🗺️")
@@ -50,7 +48,6 @@ def main():
 
     st.subheader(f'{region_type} Facts')
 
-
     selected_region = df_merged_data[df_merged_data['REGION'] == regions_dict[region_type]['value']]
 
     average_credit_amount = selected_region['AVERAGE_AMOUNT_Credit'].sum()
@@ -59,7 +56,6 @@ def main():
     average_incoming_amount = selected_region['AVERAGE_AMOUNT_Incoming'].sum()
     average_outgoing_amount = selected_region['AVERAGE_AMOUNT_Outgoing'].sum()
     average_total_amount = selected_region['AVERAGE_AMOUNT_Average'].sum()
-
 
     col1, col2, col3 = st.columns(3)
 
@@ -82,15 +78,14 @@ def main():
         st.metric('Average Total Amount', f'₱{average_total_amount:,.2f}')
 
 
+    st.subheader(f'Barchart of {amount_type} Amounts by Region')
 
     amount_value = amounts_dict[amount_type]['value']
 
-    st.subheader(f'{region_type} {amount_type} Facts')
-
-
     df_region = df_merged_data[['REGION', amount_value]]
 
-
+    # Create a bar plot
+    st.bar_chart(df_region.set_index('REGION'))
 
 if __name__ == "__main__":
     main()
