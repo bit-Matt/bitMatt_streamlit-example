@@ -20,16 +20,23 @@ def display_map(df, region_type):
     all_regions = 'data/jsons/regions.geojson'
     geo_data = all_regions if is_all else regions_dict[region_type]['path']
     key_on = 'feature.properties.ADM1_EN' if is_all else 'feature.properties.ADM2_EN'
+
+    mapped_df = df.copy()
+    mapped_df['REGION'] = mapped_df['REGION'].apply(lambda x: get_key(x))
     
+ 
     choropleth = folium.Choropleth(
-        data=df,
         geo_data=geo_data,
+        data=mapped_df,
         key_on=key_on,
         columns=('REGION', 'AVERAGE_AMOUNT_Average'),
+        fill_color='YlOrRd',
+        fill_opacity=0.7,
         line_opacity=0.8,
-        highlight=True
-    )
-    choropleth.geojson.add_to(map)
+        line_color='black',
+        name='Average Amount',
+    ).add_to(map)
+
 
     custom_tooltip = """
     <h4>{region_name}</h4>
@@ -38,6 +45,8 @@ def display_map(df, region_type):
     <p>Average Financial Amount: {average_financial_amount}</p>
     <p>Average Incoming Amount: {average_incoming_amount}</p>
     <p>Average Outgoing Amount: {average_outgoing_amount}</p>
+    <hr>
+    <p><b>Average Total Amount: {average_total_amount}</b></p>
     """
 
     if is_all:
@@ -50,6 +59,7 @@ def display_map(df, region_type):
             average_financial_amount = df_indexed.loc[mapped_region_name, 'AVERAGE_AMOUNT_Financial'] if mapped_region_name in list(df_indexed.index) else 0
             average_incoming_amount = df_indexed.loc[mapped_region_name, 'AVERAGE_AMOUNT_Incoming'] if mapped_region_name in list(df_indexed.index) else 0
             average_outgoing_amount = df_indexed.loc[mapped_region_name, 'AVERAGE_AMOUNT_Outgoing'] if mapped_region_name in list(df_indexed.index) else 0
+            average_total_amount = df_indexed.loc[mapped_region_name, 'AVERAGE_AMOUNT_Average'] if mapped_region_name in list(df_indexed.index) else 0
 
             # Check if the value is zero and replace with "No data"
             average_credit_amount = "No data" if average_credit_amount == 0 else f'₱{average_credit_amount:,.2f}'
@@ -57,6 +67,7 @@ def display_map(df, region_type):
             average_financial_amount = "No data" if average_financial_amount == 0 else f'₱{average_financial_amount:,.2f}'
             average_incoming_amount = "No data" if average_incoming_amount == 0 else f'₱{average_incoming_amount:,.2f}'
             average_outgoing_amount = "No data" if average_outgoing_amount == 0 else f'₱{average_outgoing_amount:,.2f}'
+            average_total_amount = "No data" if average_total_amount == 0 else f'₱{average_total_amount:,.2f}'
 
             tooltip_content = custom_tooltip.format(
                 region_name=region_name,
@@ -65,6 +76,7 @@ def display_map(df, region_type):
                 average_financial_amount=average_financial_amount,
                 average_incoming_amount=average_incoming_amount,
                 average_outgoing_amount=average_outgoing_amount,
+                average_total_amount=average_total_amount,
             )
             feature['properties']['tooltip_content'] = tooltip_content
 
