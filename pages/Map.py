@@ -7,7 +7,7 @@ from constants.amounts import amounts_dict, amounts_list
 from constants.provinces import provinces_dict, get_key_province
 import plotly.express as px
 
-APP_TITLE = 'Choropleth Map of BPI Customers 🗺️'
+APP_TITLE = 'Average Transaction Amount per customer 🏦'
 APP_SUB_TITLE = 'Source: https://github.com/faeldon/philippines-json-maps'
 
 @st.cache_data(experimental_allow_widgets=True)
