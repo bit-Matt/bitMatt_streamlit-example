@@ -31,24 +31,45 @@ def display_map(df, region_type):
     )
     choropleth.geojson.add_to(map)
 
-    choropleth.geojson.add_child(
-        folium.features.GeoJsonTooltip(['ADM1_EN' if is_all else 'ADM2_EN'], labels=False)
-    )
+    custom_tooltip = """
+    <h4>{region_name}</h4>
+    <p>Average Credit Amount: {average_credit_amount}</p>
+    <p>Average Debit Amount: {average_debit_amount}</p>
+    <p>Average Financial Amount: {average_financial_amount}</p>
+    <p>Average Incoming Amount: {average_incoming_amount}</p>
+    <p>Average Outgoing Amount: {average_outgoing_amount}</p>
+    """
 
     if is_all:
         df_indexed = df.set_index('REGION')
-        print(df_indexed.loc['REGION I (ILOCOS REGION)', 'AVERAGE_AMOUNT_Credit'])
         for feature in choropleth.geojson.data['features']:
             region_name = feature['properties']['ADM1_EN']
             mapped_region_name = regions_dict[region_name]['value'] if region_name in regions_dict else ''
-            feature['properties']['average_credit_amount'] = 'Average Credit Amount: ' + '{:,}'.format(df_indexed.loc[mapped_region_name, 'AVERAGE_AMOUNT_Credit']) if mapped_region_name in list(df_indexed.index) else ''
-            feature['properties']['average_debit_amount'] = 'Average Debit Amount: ' + '{:,}'.format(df_indexed.loc[mapped_region_name, 'AVERAGE_AMOUNT_Debit']) if mapped_region_name in list(df_indexed.index) else ''
-            feature['properties']['average_financial_amount'] = 'Average Financial Amount: ' + '{:,}'.format(df_indexed.loc[mapped_region_name, 'AVERAGE_AMOUNT_Financial']) if mapped_region_name in list(df_indexed.index) else ''
-            feature['properties']['average_incoming_amount'] = 'Average Incoming Amount: ' + '{:,}'.format(df_indexed.loc[mapped_region_name, 'AVERAGE_AMOUNT_Incoming']) if mapped_region_name in list(df_indexed.index) else ''
-            feature['properties']['average_outgoing_amount'] = 'Average Outgoing Amount: ' + '{:,}'.format(df_indexed.loc[mapped_region_name, 'AVERAGE_AMOUNT_Outgoing']) if mapped_region_name in list(df_indexed.index) else ''
+            average_credit_amount = df_indexed.loc[mapped_region_name, 'AVERAGE_AMOUNT_Credit'] if mapped_region_name in list(df_indexed.index) else 0
+            average_debit_amount = df_indexed.loc[mapped_region_name, 'AVERAGE_AMOUNT_Debit'] if mapped_region_name in list(df_indexed.index) else 0
+            average_financial_amount = df_indexed.loc[mapped_region_name, 'AVERAGE_AMOUNT_Financial'] if mapped_region_name in list(df_indexed.index) else 0
+            average_incoming_amount = df_indexed.loc[mapped_region_name, 'AVERAGE_AMOUNT_Incoming'] if mapped_region_name in list(df_indexed.index) else 0
+            average_outgoing_amount = df_indexed.loc[mapped_region_name, 'AVERAGE_AMOUNT_Outgoing'] if mapped_region_name in list(df_indexed.index) else 0
+
+            # Check if the value is zero and replace with "No data"
+            average_credit_amount = "No data" if average_credit_amount == 0 else f'₱{average_credit_amount:,.2f}'
+            average_debit_amount = "No data" if average_debit_amount == 0 else f'₱{average_debit_amount:,.2f}'
+            average_financial_amount = "No data" if average_financial_amount == 0 else f'₱{average_financial_amount:,.2f}'
+            average_incoming_amount = "No data" if average_incoming_amount == 0 else f'₱{average_incoming_amount:,.2f}'
+            average_outgoing_amount = "No data" if average_outgoing_amount == 0 else f'₱{average_outgoing_amount:,.2f}'
+
+            tooltip_content = custom_tooltip.format(
+                region_name=region_name,
+                average_credit_amount=average_credit_amount,
+                average_debit_amount=average_debit_amount,
+                average_financial_amount=average_financial_amount,
+                average_incoming_amount=average_incoming_amount,
+                average_outgoing_amount=average_outgoing_amount,
+            )
+            feature['properties']['tooltip_content'] = tooltip_content
 
         choropleth.geojson.add_child(
-            folium.features.GeoJsonTooltip(['ADM1_EN', 'average_credit_amount', 'average_debit_amount', 'average_financial_amount', 'average_incoming_amount', 'average_outgoing_amount'], labels=False)
+            folium.features.GeoJsonTooltip(['ADM1_EN', 'tooltip_content'], labels=False)
         )
 
     st_folium(map, width=800, height=500)
