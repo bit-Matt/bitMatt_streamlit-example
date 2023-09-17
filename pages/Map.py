@@ -15,18 +15,22 @@ def display_map(region_type: str):
     map = folium.Map(location=[
         12.8797, 121.7740
     ], zoom_start=5, scrollWheelZoom=True, tiles='CartoDB positron')
+
+    is_all = region_type == 'All Regions'
+    all_regions = 'data/jsons/regions.geojson'
+    geo_data = all_regions if is_all else regions_dict[region_type]['path']
+    key_on = 'feature.properties.ADM1_EN' if is_all else 'feature.properties.ADM2_EN'
     
     choropleth = folium.Choropleth(
-        geo_data=regions_dict[region_type]['path'],
-        columns=('State Name', 'State Total Reports Quarter'),
-        key_on='feature.properties.ADM1_EN',
+        geo_data=geo_data,
+        key_on=key_on,
         line_opacity=0.8,
         highlight=True
     )
     choropleth.geojson.add_to(map)
 
     choropleth.geojson.add_child(
-        folium.features.GeoJsonTooltip(['ADM2_EN'], labels=False)
+        folium.features.GeoJsonTooltip(['ADM1_EN' if is_all else 'ADM2_EN'], labels=False)
     )
 
     st_folium(map, width=800, height=500)
@@ -46,6 +50,10 @@ def main():
     amount_type = st.sidebar.selectbox("Select Amount Type", amounts_list)
 
     display_map(region_type)
+
+
+    if region_type == 'All Regions':
+        return
 
     st.subheader(f'Region: {region_type}')
 

@@ -57,7 +57,8 @@ regions_dict = {
     },
 }
 
-regions_list = list(regions_dict.keys())
+
+regions_list = ['All Regions'] + list(regions_dict.keys())
 
 
 def get_key(val):
