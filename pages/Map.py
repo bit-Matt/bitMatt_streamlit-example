@@ -7,8 +7,8 @@ from constants.amounts import amounts_dict, amounts_list
 from constants.provinces import provinces_dict, get_key_province
 import plotly.express as px
 
-APP_TITLE = 'Philippines Map'
-APP_SUB_TITLE = 'Source: Philippines'
+APP_TITLE = 'Choropleth Map of BPI Customers 🗺️'
+APP_SUB_TITLE = 'Source: https://github.com/faeldon/philippines-json-maps'
 
 @st.cache_data(experimental_allow_widgets=True)
 def display_map(df_region, df_province, region_type):
@@ -137,8 +137,6 @@ def main():
     df_regions_data = pd.read_excel('data/spreadsheets/merged_data.xlsx')
     df_provinces_data = pd.read_excel('data/spreadsheets/merged_provinces.xlsx')
 
-    st.markdown("# Map page 🗺️")
-    st.sidebar.markdown("# Map page 🗺️")
 
     region_type = st.sidebar.selectbox("Select Location Type", regions_list)
     amount_type = st.sidebar.selectbox("Select Amount Type", amounts_list)
