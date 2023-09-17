@@ -1,4 +1,3 @@
-
 regions_dict = {
     'Region I': {
         'value': "REGION I (ILOCOS REGION)",
@@ -59,3 +58,12 @@ regions_dict = {
 }
 
 regions_list = list(regions_dict.keys())
+
+
+def get_key(val):
+    for key, value in regions_dict.items():
+        if val == value["value"]:
+            return key
+
+
+

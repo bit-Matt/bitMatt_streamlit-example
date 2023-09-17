@@ -1,4 +1,3 @@
-
 amounts_dict = {
     'Credit': {
         'value': "AVERAGE_AMOUNT_Credit",

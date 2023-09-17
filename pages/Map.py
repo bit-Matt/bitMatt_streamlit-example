@@ -2,8 +2,9 @@ import streamlit as st
 import pandas as pd
 import folium
 from streamlit_folium import st_folium
-from constants.regions import regions_dict, regions_list
+from constants.regions import regions_dict, regions_list, get_key
 from constants.amounts import amounts_dict, amounts_list
+import plotly.express as px
 
 APP_TITLE = 'Philippines Map'
 APP_SUB_TITLE = 'Source: Philippines'
@@ -46,7 +47,7 @@ def main():
 
     display_map(region_type)
 
-    st.subheader(f'{region_type} Facts')
+    st.subheader(f'Region: {region_type}')
 
     selected_region = df_merged_data[df_merged_data['REGION'] == regions_dict[region_type]['value']]
 
@@ -77,15 +78,27 @@ def main():
     with col3:
         st.metric('Average Total Amount', f'₱{average_total_amount:,.2f}')
 
-
     st.subheader(f'Barchart of {amount_type} Amounts by Region')
 
     amount_value = amounts_dict[amount_type]['value']
-
     df_region = df_merged_data[['REGION', amount_value]]
+    df_region['REGION'] = df_region['REGION'].apply(lambda x: get_key(x))
 
-    # Create a bar plot
-    st.bar_chart(df_region.set_index('REGION'))
+    # Sorting options
+    sort_option = st.radio("Sort by:", ("Value (Ascending)", "Value (Descending)"))
+
+    sorted_df = df_region.sort_values(by=[amount_value], ascending=[sort_option == "Value (Ascending)"])
+
+    # Plotly bar chart
+    fig = px.bar(
+        sorted_df, 
+        x='REGION', 
+        y=amount_value, 
+        title=f'{amount_type} Amounts by Region',
+        labels={'REGION': 'Region', amount_value: amount_type},
+    )
+
+    st.plotly_chart(fig)
 
 if __name__ == "__main__":
     main()
