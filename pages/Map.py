@@ -2,74 +2,13 @@ import streamlit as st
 import pandas as pd
 import folium
 from streamlit_folium import st_folium
+from constants.regions import regions_dict, regions_list
+from constants.amounts import amounts_dict, amounts_list
 
 APP_TITLE = 'Philippines Map'
 APP_SUB_TITLE = 'Source: Philippines'
 
-
-
-regionsDict = {
-    'Region I': {
-        'value': "REGION I (ILOCOS REGION)",
-        "path": "data/jsons/region-1.geojson"
-    },
-    'Region II': {
-        'value': "REGION II (CAGAYAN VALLEY)",
-        "path": "data/jsons/region-2.geojson"
-    },
-    'Region III': {
-        'value': "REGION III (CENTRAL LUZON)",
-        "path": "data/jsons/region-3.geojson"
-    },
-    'Region IV-A': {
-        'value': "MIMAROPA REGION",
-        "path": "data/jsons/region-17.geojson"
-    },
-    'Region V': {
-        'value': "REGION V (BICOL REGION)",
-        "path": "data/jsons/region-5.geojson"
-    },
-    'Region VI': {
-        'value': "REGION VI (WESTERN VISAYAS)",
-        "path": "data/jsons/region-6.geojson"
-    },
-    'Region VII': {
-        'value': "REGION VII (CENTRAL VISAYAS)",
-        "path": "data/jsons/region-7.geojson"
-    },
-    'Region VIII': {
-        'value': "REGION VIII (EASTERN VISAYAS)",
-        "path": "data/jsons/region-8.geojson"
-    },
-    'Region IX': {
-        'value': "REGION IX (ZAMBOANGA PENINSULA)",
-        "path": "data/jsons/region-9.geojson"
-    },
-    'Region X': {
-        'value': "REGION X (NORTHERN MINDANAO)",
-        "path": "data/jsons/region-10.geojson"
-    },
-    'Region XI': {
-        'value': "REGION XI (DAVAO REGION)",
-        "path": "data/jsons/region-11.geojson"
-    },
-    'Region XII': {
-        'value': "REGION XII (SOCCSKSARGEN)",
-        "path": "data/jsons/region-12.geojson"
-    },
-    'Region XIII': {
-        'value': "REGION XIII (CARAGA)",
-        "path": "data/jsons/region-13.geojson"
-    },
-    'Cordillera Administrative Region': {
-        'value': "CORDILLERA ADMINISTRATIVE REGION (CAR)",
-        "path": "data/jsons/region-14.geojson"
-    },
-}
-
-regions = list(regionsDict.keys())
-
-
+@st.cache_data(experimental_allow_widgets=True)
 def display_map(region_type: str):
 
     map = folium.Map(location=[
@@ -77,7 +16,7 @@ def display_map(region_type: str):
     ], zoom_start=5, scrollWheelZoom=True, tiles='CartoDB positron')
     
     choropleth = folium.Choropleth(
-        geo_data=regionsDict[region_type]['path'],
+        geo_data=regions_dict[region_type]['path'],
         columns=('State Name', 'State Total Reports Quarter'),
         key_on='feature.properties.ADM1_EN',
         line_opacity=0.8,
@@ -98,13 +37,60 @@ def main():
     st.title(APP_TITLE)
     st.caption(APP_SUB_TITLE)
 
+    #Load Data
+    df_merged_data = pd.read_excel('data/spreadsheets/merged_data.xlsx')
+
     st.markdown("# Map page 🗺️")
     st.sidebar.markdown("# Map page 🗺️")
 
-    region_type = st.sidebar.selectbox("Select Location Type", regions)
+    region_type = st.sidebar.selectbox("Select Location Type", regions_list)
+    amount_type = st.sidebar.selectbox("Select Amount Type", amounts_list)
+
+    display_map(region_type)
+
+    st.subheader(f'{region_type} Facts')
 
 
-    state_name = display_map(region_type)
+    selected_region = df_merged_data[df_merged_data['REGION'] == regions_dict[region_type]['value']]
+
+    average_credit_amount = selected_region['AVERAGE_AMOUNT_Credit'].sum()
+    average_debit_amount = selected_region['AVERAGE_AMOUNT_Debit'].sum()
+    average_financial_amount = selected_region['AVERAGE_AMOUNT_Financial'].sum()
+    average_incoming_amount = selected_region['AVERAGE_AMOUNT_Incoming'].sum()
+    average_outgoing_amount = selected_region['AVERAGE_AMOUNT_Outgoing'].sum()
+    average_total_amount = selected_region['AVERAGE_AMOUNT_Average'].sum()
+
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.metric('Average Credit Amount', f'₱{average_credit_amount:,.2f}')
+
+    with col2:
+        st.metric('Average Debit Amount', f'₱{average_debit_amount:,.2f}')
+
+    with col3:
+        st.metric('Average Financial Amount', f'₱{average_financial_amount:,.2f}')
+
+    with col1:
+        st.metric('Average Incoming Amount', f'₱{average_incoming_amount:,.2f}')
+
+    with col2:
+        st.metric('Average Outgoing Amount', f'₱{average_outgoing_amount:,.2f}')
+
+    with col3:
+        st.metric('Average Total Amount', f'₱{average_total_amount:,.2f}')
+
+
+
+    amount_value = amounts_dict[amount_type]['value']
+
+    st.subheader(f'{region_type} {amount_type} Facts')
+
+
+    df_region = df_merged_data[['REGION', amount_value]]
+
+
 
 if __name__ == "__main__":
     main()
