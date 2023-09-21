@@ -55,7 +55,7 @@ st.plotly_chart(fig2)
 
 
 #--------------------------------
-# Chart 3. Frequency of Transactions between the Generations
+# Chart 3.
 data3 = {'Generation': ['Older Generations', 'Millennials'],
         'Frequency': [73.24264317, 114.5447923]
         }
@@ -79,7 +79,7 @@ st.markdown('Note: Transaction count is the number of transactions made by a cus
 
 
 #--------------------------------
-# Chart 4. Frequency of Transactions between the Generations
+# Chart 4.
 data4 = {'Channel': ['Digital', 'Traditional'],
         'Average': [158.2826408, 72.11807072]
         }
@@ -102,7 +102,7 @@ st.markdown('Note: Transaction count is the number of transactions made by a cus
 
 
 #--------------------------------
-# Chart 5. Frequency of Transactions between the Generations
+# Chart 5.
 data5 = {'Generation': ['Older Generations', 'Millennials'],
         'Amount': [296704.9723, 436189.6271]
         }
