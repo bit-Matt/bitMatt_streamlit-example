@@ -2,7 +2,6 @@ import streamlit as st
 
 # Page title and sidebar title
 st.markdown("# Main page 🎈")
-st.sidebar.markdown("# Main page 🎈")
 
 # Challenge section
 st.markdown("## CHALLENGE :trophy:")
